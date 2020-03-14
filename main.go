@@ -13,12 +13,8 @@ import (
 func main() {
 	fp := os.Args[1]
 	port := ":3030"
-	html, err := convert(fp)
-	if err != nil {
-		log.Fatalf("Error converting file: %v", err)
-	}
 
-	http.Handle("/", handlePage(html))
+	http.Handle("/", handlePage(fp))
 	fmt.Printf("Spinning up server on port %s...\n", port)
 	log.Fatal(http.ListenAndServe(port, nil))
 }
@@ -35,7 +31,11 @@ func convert(filepath string) (string, error) {
 
 }
 
-func handlePage(page string) http.HandlerFunc {
+func handlePage(f string) http.HandlerFunc {
+	page, err := convert(f)
+	if err != nil {
+		log.Fatalf("Error converting file: %v", err)
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, page)
 	}
