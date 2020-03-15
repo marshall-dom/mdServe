@@ -6,6 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
+
+	"sync"
 
 	"github.com/gomarkdown/markdown"
 )
@@ -16,7 +20,22 @@ func main() {
 
 	http.Handle("/", handlePage(fp))
 	fmt.Printf("Spinning up server on port %s...\n", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		log.Fatal(http.ListenAndServe(port, nil))
+		wg.Done()
+	}()
+
+	// The following code will open a browser window, but
+	// requires additional permissions:
+
+	//err := openBrowser("localhost:3030")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	wg.Wait()
 }
 
 func convert(filepath string) (string, error) {
@@ -39,4 +58,38 @@ func handlePage(f string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, page)
 	}
+}
+
+func openBrowser(url string) error {
+	fox := "/Applications/Firefox.app"
+	cmd := exec.Command(fox, url)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	fmt.Print("attempting to open browser...\n")
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+		if err != nil {
+			return err
+		}
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+		if err != nil {
+			return err
+		}
+	case "darwin":
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	default:
+		err = fmt.Errorf("unsupported platform")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
