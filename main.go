@@ -28,16 +28,14 @@ func main() {
 		wg.Done()
 	}()
 
-	// The following code will open a browser window, but
-	// requires additional permissions:
-
-	//err := openBrowser("localhost:3030")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	err := openBrowser("localhost:3030")
+	if err != nil {
+		log.Fatal(err)
+	}
 	wg.Wait()
 }
 
+// convert returns an html string from the specified markdown file.
 func convert(filepath string) (string, error) {
 	data, err := ioutil.ReadFile(filepath)
 	if err != nil {
@@ -50,6 +48,8 @@ func convert(filepath string) (string, error) {
 
 }
 
+// handlePage takes a file path and returns a handler func that serves
+// an html file.
 func handlePage(f string) http.HandlerFunc {
 	page, err := convert(f)
 	if err != nil {
@@ -60,14 +60,14 @@ func handlePage(f string) http.HandlerFunc {
 	}
 }
 
+// openBrowser opens a browser window to a specified url.
 func openBrowser(url string) error {
-	fox := "/Applications/Firefox.app"
+	fox := "/Applications/Firefox.app/Contents/MacOS/firefox-bin"
 	cmd := exec.Command(fox, url)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	fmt.Print("attempting to open browser...\n")
 	var err error
 	switch runtime.GOOS {
 	case "linux":
